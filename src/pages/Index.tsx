@@ -313,9 +313,11 @@ const Index = () => {
                           <Button variant="outline" size="sm" onClick={() => setIsCartOpen(false)}>
                             Continue Shopping
                           </Button>
-                          <Button size="sm">
-                            Checkout <ChevronRight className="ml-1 h-4 w-4" />
-                          </Button>
+                          <Link to="/checkout" onClick={() => setIsCartOpen(false)}>
+                            <Button size="sm" className="w-full">
+                              Checkout <ChevronRight className="ml-1 h-4 w-4" />
+                            </Button>
+                          </Link>
                         </div>
                       </>
                     )}
