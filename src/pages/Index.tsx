@@ -1,12 +1,18 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ShoppingCart, Search, Heart, Star } from "lucide-react";
+import { ShoppingCart, Search, Heart, Star, X, Trash2, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
 
 // Mock product data - will be replaced with Supabase data later
 const products = [
@@ -111,11 +117,27 @@ const products = [
 // Categories for filter
 const categories = ["All", "Clothing", "Footwear", "Accessories", "Electronics"];
 
+// Cart item type
+interface CartItem {
+  id: number;
+  name: string;
+  price: number;
+  image: string;
+  quantity: number;
+}
+
 const Index = () => {
-  const [cartCount, setCartCount] = useState(0);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [priceRange, setPriceRange] = useState([0, 200]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isCartOpen, setIsCartOpen] = useState(false);
+
+  // Calculate cart count
+  const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+  
+  // Calculate cart total
+  const cartTotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
 
   // Filter products based on selected filters
   const filteredProducts = products.filter(product => {
@@ -141,8 +163,44 @@ const Index = () => {
     return stars;
   };
 
-  const addToCart = () => {
-    setCartCount(cartCount + 1);
+  const addToCart = (product) => {
+    setCartItems(prevItems => {
+      // Check if product is already in cart
+      const existingItemIndex = prevItems.findIndex(item => item.id === product.id);
+      
+      if (existingItemIndex >= 0) {
+        // Product exists in cart, increase quantity
+        const updatedItems = [...prevItems];
+        updatedItems[existingItemIndex] = {
+          ...updatedItems[existingItemIndex],
+          quantity: updatedItems[existingItemIndex].quantity + 1
+        };
+        return updatedItems;
+      } else {
+        // Product is not in cart, add it
+        return [...prevItems, {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          image: product.image,
+          quantity: 1
+        }];
+      }
+    });
+  };
+
+  const removeFromCart = (productId) => {
+    setCartItems(prevItems => prevItems.filter(item => item.id !== productId));
+  };
+
+  const updateQuantity = (productId, newQuantity) => {
+    if (newQuantity < 1) return;
+    
+    setCartItems(prevItems => 
+      prevItems.map(item => 
+        item.id === productId ? { ...item, quantity: newQuantity } : item
+      )
+    );
   };
 
   return (
@@ -164,14 +222,106 @@ const Index = () => {
               />
             </div>
             <div className="relative">
-              <Button variant="outline" size="icon" className="relative">
-                <ShoppingCart className="h-5 w-5" />
-                {cartCount > 0 && (
-                  <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0">
-                    {cartCount}
-                  </Badge>
-                )}
-              </Button>
+              <DropdownMenu open={isCartOpen} onOpenChange={setIsCartOpen}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="relative">
+                    <ShoppingCart className="h-5 w-5" />
+                    {cartCount > 0 && (
+                      <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0">
+                        {cartCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80 p-0">
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-medium">Shopping Cart ({cartCount})</h3>
+                      {cartCount > 0 && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 px-2 text-muted-foreground"
+                          onClick={() => setCartItems([])}
+                        >
+                          Clear All
+                        </Button>
+                      )}
+                    </div>
+                    
+                    {cartItems.length === 0 ? (
+                      <div className="text-center py-6">
+                        <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                          <ShoppingCart className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <p className="text-muted-foreground">Your cart is empty</p>
+                      </div>
+                    ) : (
+                      <div className="max-h-80 overflow-auto">
+                        {cartItems.map((item) => (
+                          <div key={item.id} className="flex py-3">
+                            <div className="h-16 w-16 rounded bg-muted mr-3 overflow-hidden flex-shrink-0">
+                              <img 
+                                src={item.image} 
+                                alt={item.name} 
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-sm line-clamp-1">{item.name}</h4>
+                              <div className="flex items-center mt-1 text-sm">
+                                <span className="font-medium">${item.price.toFixed(2)}</span>
+                                <span className="mx-2 text-muted-foreground">×</span>
+                                <div className="flex items-center border rounded">
+                                  <button 
+                                    className="px-2 py-0.5 text-xs"
+                                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                  >
+                                    -
+                                  </button>
+                                  <span className="px-2 text-xs">{item.quantity}</span>
+                                  <button 
+                                    className="px-2 py-0.5 text-xs"
+                                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-muted-foreground"
+                              onClick={() => removeFromCart(item.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {cartItems.length > 0 && (
+                      <>
+                        <Separator className="my-3" />
+                        <div className="flex justify-between items-center mb-4">
+                          <span className="font-medium">Subtotal</span>
+                          <span className="font-bold">${cartTotal.toFixed(2)}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button variant="outline" size="sm" onClick={() => setIsCartOpen(false)}>
+                            Continue Shopping
+                          </Button>
+                          <Button size="sm">
+                            Checkout <ChevronRight className="ml-1 h-4 w-4" />
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -298,7 +448,7 @@ const Index = () => {
                     </Link>
                     <div className="flex items-center justify-between mt-2">
                       <span className="font-bold">${product.price.toFixed(2)}</span>
-                      <Button size="sm" onClick={addToCart}>Add to Cart</Button>
+                      <Button size="sm" onClick={() => addToCart(product)}>Add to Cart</Button>
                     </div>
                   </CardContent>
                 </Card>
