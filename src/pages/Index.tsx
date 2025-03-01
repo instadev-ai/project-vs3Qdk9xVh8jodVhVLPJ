@@ -205,7 +205,129 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ... keep existing code (header with search and cart) */}
+      {/* Header with search and cart */}
+      <header className="sticky top-0 z-10 bg-white shadow-sm">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold">Product Catalog</h1>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="relative w-64">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search products..."
+                className="pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="relative">
+              <DropdownMenu open={isCartOpen} onOpenChange={setIsCartOpen}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="relative">
+                    <ShoppingCart className="h-5 w-5" />
+                    {cartCount > 0 && (
+                      <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0">
+                        {cartCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80 p-0">
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-medium">Shopping Cart ({cartCount})</h3>
+                      {cartCount > 0 && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 px-2 text-muted-foreground"
+                          onClick={() => setCartItems([])}
+                        >
+                          Clear All
+                        </Button>
+                      )}
+                    </div>
+                    
+                    {cartItems.length === 0 ? (
+                      <div className="text-center py-6">
+                        <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                          <ShoppingCart className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <p className="text-muted-foreground">Your cart is empty</p>
+                      </div>
+                    ) : (
+                      <div className="max-h-80 overflow-auto">
+                        {cartItems.map((item) => (
+                          <div key={item.id} className="flex py-3">
+                            <div className="h-16 w-16 rounded bg-muted mr-3 overflow-hidden flex-shrink-0">
+                              <img 
+                                src={item.image} 
+                                alt={item.name} 
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-sm line-clamp-1">{item.name}</h4>
+                              <div className="flex items-center mt-1 text-sm">
+                                <span className="font-medium">${item.price.toFixed(2)}</span>
+                                <span className="mx-2 text-muted-foreground">×</span>
+                                <div className="flex items-center border rounded">
+                                  <button 
+                                    className="px-2 py-0.5 text-xs"
+                                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                  >
+                                    -
+                                  </button>
+                                  <span className="px-2 text-xs">{item.quantity}</span>
+                                  <button 
+                                    className="px-2 py-0.5 text-xs"
+                                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-muted-foreground"
+                              onClick={() => removeFromCart(item.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {cartItems.length > 0 && (
+                      <>
+                        <Separator className="my-3" />
+                        <div className="flex justify-between items-center mb-4">
+                          <span className="font-medium">Subtotal</span>
+                          <span className="font-bold">${cartTotal.toFixed(2)}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button variant="outline" size="sm" onClick={() => setIsCartOpen(false)}>
+                            Continue Shopping
+                          </Button>
+                          <Link to="/checkout" onClick={() => setIsCartOpen(false)}>
+                            <Button size="sm" className="w-full">
+                              Checkout <ChevronRight className="ml-1 h-4 w-4" />
+                            </Button>
+                          </Link>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </div>
+      </header>
 
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -231,7 +353,8 @@ const Index = () => {
             </div>
 
             <div>
-              <h3 className="font-medium mb-3">Price Range</h3>              <div className="px-2">
+              <h3 className="font-medium mb-3">Price Range</h3>
+              <div className="px-2">
                 <Slider
                   defaultValue={[0, 200]}
                   max={200}
@@ -264,9 +387,83 @@ const Index = () => {
             </div>
           </div>
 
+          {/* Product grid */}
+          <div className="md:col-span-3">
+            <div className="mb-6 flex justify-between items-center">
+              <h2 className="text-xl font-semibold">
+                {filteredProducts.length} {filteredProducts.length === 1 ? "Product" : "Products"}
+              </h2>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-muted-foreground">View:</span>
+                <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="7" height="7" />
+                    <rect x="14" y="3" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" />
+                    <rect x="14" y="14" width="7" height="7" />
+                  </svg>
+                </Button>
+                <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="21" y1="6" x2="3" y2="6" />
+                    <line x1="21" y1="12" x2="3" y2="12" />
+                    <line x1="21" y1="18" x2="3" y2="18" />
+                  </svg>
+                </Button>
+              </div>
+            </div>
 
-          {/* ... keep existing code (product grid and empty state) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredProducts.map((product) => (
+                <Card key={product.id} className="overflow-hidden">
+                  <div className="relative">
+                    <Link to={`/product`}>
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="h-48 w-full object-cover"
+                      />
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 bg-white/80 backdrop-blur-sm rounded-full h-8 w-8"
+                    >
+                      <Heart className="h-4 w-4" />
+                    </Button>
+                    {product.tags.includes("Sale") && (
+                      <Badge className="absolute top-2 left-2 bg-red-500">Sale</Badge>
+                    )}
+                    {product.tags.includes("New") && (
+                      <Badge className="absolute top-2 left-2 bg-blue-500">New</Badge>
+                    )}
+                  </div>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm text-muted-foreground">{product.category}</span>
+                      <div className="flex">
+                        {renderStars(product.rating)}
+                      </div>
+                    </div>
+                    <Link to={`/product`} className="hover:underline">
+                      <h3 className="font-medium mb-1 line-clamp-1">{product.name}</h3>
+                    </Link>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="font-bold">${product.price.toFixed(2)}</span>
+                      <Button size="sm" onClick={() => addToCart(product)}>Add to Cart</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
+            {filteredProducts.length === 0 && (
+              <div className="text-center py-12">
+                <h3 className="text-lg font-medium mb-2">No products found</h3>
+                <p className="text-muted-foreground">Try adjusting your filters or search query</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -274,6 +471,3 @@ const Index = () => {
 };
 
 export default Index;
-
-
-
