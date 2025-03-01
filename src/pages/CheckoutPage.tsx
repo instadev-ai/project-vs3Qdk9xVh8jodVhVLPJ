@@ -406,7 +406,7 @@ const CheckoutPage = () => {
               </div>
               
               <Button 
-                className="w-full mt-6" 
+                className="w-full mt-6 bg-black hover:bg-gray-800" 
                 size="lg"
                 onClick={handlePlaceOrder}
               >
