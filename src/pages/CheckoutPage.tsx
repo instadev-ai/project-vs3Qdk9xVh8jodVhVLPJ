@@ -414,7 +414,7 @@ const CheckoutPage = () => {
               </Button>
               
               <p className="text-xs text-center text-muted-foreground mt-4">
-                By placing your order, you agree to our Terms of Service and Privacy Policy.
+                By ordering, you agree to our Terms of Service and Privacy Policy.
               </p>
             </div>
           </div>
