@@ -231,7 +231,7 @@ const Index = () => {
             </div>
 
             <div>
-              <h3 className="font-medium mb-3">Prices</h3>              <div className="px-2">
+              <h3 className="font-medium mb-3">Price Range</h3>              <div className="px-2">
                 <Slider
                   defaultValue={[0, 200]}
                   max={200}
@@ -274,4 +274,6 @@ const Index = () => {
 };
 
 export default Index;
+
+
 
